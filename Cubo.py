@@ -73,7 +73,13 @@ class RubiksCube:
         elif move == "D'":
             self.rotate_face_counterclockwise(self.down)
             self.rotate_adjacent_edges_counterclockwise_D([self.left, self.front, self.right, self.back])
-   
+        elif move == 'F':
+            self.rotate_face_clockwise(self.front)
+            self.rotate_adjacent_edges_clockwise_F([self.up, self.right, self.down, self.left])
+        elif move == "F'":
+            self.rotate_face_clockwise(self.front)
+            self.rotate_adjacent_edges_counterclockwise_F([self.up, self.right, self.down, self.left])
+
     def rotate_face_clockwise(self, face):
         face[:] = [list(row[::-1]) for row in zip(*face)]
 
@@ -90,6 +96,27 @@ class RubiksCube:
         for i in range(len(edge_faces) - 1, 0, -1):
             edge_faces[i][-1] = edge_faces[i - 1][-1]
         edge_faces[0][-1] = last_rows[-1]
+#////////////////////////////////////////////////////////////////////////////////
+
+    def rotate_adjacent_edges_clockwise_F(self, edge_faces):
+
+        last_row_up = edge_faces[0][-1].copy()
+        
+        for i in range(len(edge_faces[1][0])):
+            edge_faces[0][-1][i] = edge_faces[1][0][i]
+
+        first_col_right = [edge_faces[1][j][0] for j in range(3)]
+
+        for i in range(len(edge_faces[1])):
+            edge_faces[1][i][0] = edge_faces[2][0][i]
+
+        first_row_down = edge_faces[2][0]
+
+        for i in range(len(edge_faces[2][0])):
+            edge_faces[2][0][i] = edge_faces[3][-1][2 - i]
+
+        for i in range(3):  
+                edge_faces[3][i][-1] = last_row_up[i]
  
 #////////////////////////////////////////////////////////////////////////////////
     def rotate_face_counterclockwise(self, face):
@@ -105,18 +132,37 @@ class RubiksCube:
 
 #////////////////////////////////////////////////////////////////////////////////       
     def rotate_adjacent_edges_counterclockwise_D(self, edge_faces):
-        # Guarda la primera fila de las caras actuales
+    
         first_rows = [face[0] for face in edge_faces]
-
-        # Rotación de las últimas filas entre las caras en sentido antihorario
         for i in range(len(edge_faces) - 1):
             edge_faces[i][-1] = edge_faces[i + 1][-1]
-
-        # La última fila toma la primera fila original
         edge_faces[-1][-1] = first_rows[0]
 
 #////////////////////////////////////////////////////////////////////////////////
+
+    def rotate_adjacent_edges_counterclockwise_F(self, edge_faces):
+
+        last_row_up = edge_faces[0][-1].copy()
+        first_row_down = edge_faces[2][0].copy()
+        
+        for i in range(len(edge_faces[1][0])):
+            edge_faces[0][-1][i] = edge_faces[1][0][i]
+
+        first_col_right = [edge_faces[1][j][0] for j in range(3)]
+
+        for i in range(len(edge_faces[1])):
+            edge_faces[1][i][0] = edge_faces[2][0][i]
+
+        edge_faces[2][0] = first_row_down
+
+        for i in range(len(edge_faces[2][0])):
+            edge_faces[2][0][i] = edge_faces[3][-1][2 - i]
+
+        for i in range(3):  
+                edge_faces[3][i][-1] = last_row_up[i]
        
+#////////////////////////////////////////////////////////////////////////////////    
+
     def is_solved(self):
         for face in [self.up, self.down, self.left, self.right, self.back, self.front]:
             color = face[0][0]
@@ -177,7 +223,7 @@ def astar(cube):
                                                           current_node.cube.left, current_node.cube.right,
                                                           current_node.cube.back, current_node.cube.front] for row in face)
         closed_set.add(cube_state_tuple)
-        for move in ['U', 'U\'','D', 'D\'']:
+        for move in ['U', 'U\'','D', 'D\'','F\'']:
             new_cube = current_node.cube.copy()
             new_cube.apply_move(move)
             new_cube_state_tuple = tuple(tuple(row) for face in [new_cube.up, new_cube.down,
@@ -189,18 +235,49 @@ def astar(cube):
 
     return None
 
+def format_sequence_steps(move):
+    if move == 'U':
+        return "Arriba Derecha"
+    elif move == 'U\'':
+        return "Arriba Izquierda"
+    elif move == 'D':
+        return "Abajo Derecha"
+    elif move == 'D\'':
+        return "Abajo Izquierda"
+    elif move == 'F':
+        return "Frente Derecha"
+    elif move == 'F\'':
+        return "Frente Izquierda"
+    # estos movimientos aun me falta
+    elif move == 'D':
+        return "Derecha Derecha"
+    elif move == 'D\'':
+        return "Derecha Izquierda"
+    elif move == 'B':
+        return "Atras Derecha"
+    elif move == 'B\'':
+        return "Atras Izquierda"
+    elif move == 'L':
+        return "Izquierda Derecha"
+    elif move == 'L\'':
+        return "Izquierda Izquierda"
+
 
 def solve_cube():
     cube = RubiksCube()
     cube.load_from_file('state_cube.txt')   
-
+    # cube.apply_move('F\'')
+    # cube.apply_move('F\'')
     print("Estado inicial del cubo:")
     print_cube(cube)
     #///////////////////////////////////////
     solution = astar(cube)
     if solution:
-        print("La solucion es:")
-        print(solution)
+        print("La solución es:")
+        for i, move in enumerate(solution, 1):
+            print(f"• Paso {i}: {format_sequence_steps(move)} ({move})")
+            print()
+                
     else:
         print("No se encontró solución.")
 
